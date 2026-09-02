@@ -16,15 +16,7 @@ export type Config = StatusbarSettings
 
 export const Config: Schema<Config> = Schema.object({
   enabled: Schema.boolean().default(DEFAULT_SETTINGS.enabled).description('Display the configurable statistics row below the composer.'),
-  turns: Schema.boolean().default(DEFAULT_SETTINGS.turns).description('Show the number of completed conversation turns.'),
-  steps: Schema.boolean().default(DEFAULT_SETTINGS.steps).description('Show the number of completed agent steps.'),
-  llmTime: Schema.boolean().default(DEFAULT_SETTINGS.llmTime).description('Show cumulative model wall time.'),
-  toolTime: Schema.boolean().default(DEFAULT_SETTINGS.toolTime).description('Show cumulative time spent running tools.'),
-  ttft: Schema.boolean().default(DEFAULT_SETTINGS.ttft).description('Show average time to the first generated token.'),
-  throughput: Schema.boolean().default(DEFAULT_SETTINGS.throughput).description('Show generated tokens per second.'),
-  cacheHit: Schema.boolean().default(DEFAULT_SETTINGS.cacheHit).description('Show the prompt cache-hit percentage.'),
-  inputTokens: Schema.boolean().default(DEFAULT_SETTINGS.inputTokens).description('Show cumulative billed prompt tokens.'),
-  outputTokens: Schema.boolean().default(DEFAULT_SETTINGS.outputTokens).description('Show cumulative generated tokens.'),
+  template: Schema.string().default(DEFAULT_SETTINGS.template).role('textarea').description('Display template with ${variable} placeholders; empty = default statistics row. Variables: ${turns} ${steps} ${llm} ${tool} ${ttft} ${tps} ${cache} ${input} ${output}.'),
 })
 
 export function apply(ctx: Context, config: Config): void {

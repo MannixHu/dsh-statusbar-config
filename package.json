@@ -1,7 +1,7 @@
 {
   "name": "dsh-statusbar-config",
-  "version": "0.1.0",
-  "description": "Configurable conversation statistics row for DeepSeek Harness (shadows the shipped stats line with per-segment toggles)",
+  "version": "0.2.0",
+  "description": "Template-driven conversation statistics row for DeepSeek Harness (${variable} placeholders, shadows the shipped stats line)",
   "type": "module",
   "main": "lib/index.js",
   "exports": {

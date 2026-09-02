@@ -4,7 +4,7 @@ import type { SessionStatsProjection, TokenUsageProjection, ConversationNode } f
 import type { SnapshotSelector } from './hooks.js'
 import { DEFAULT_SETTINGS, type StatusbarSettings } from '../settings.js'
 import type { Translate } from './locales.js'
-import { buildStatsGroups, deriveStats } from './stats.js'
+import { buildStatsGroups, ALL_SEGMENTS, deriveStats, renderTemplate } from './stats.js'
 
 export interface DockProps {
   settings: SettingsScopeLike<StatusbarSettings>
@@ -28,8 +28,23 @@ export function ConfigurableStatsLine({ settings, t, useChat, useSession, usePro
   const usage = useProjection ? useProjection<TokenUsageProjection | undefined>('tokenUsage') : undefined
   const projectedStats = useProjection ? useProjection<SessionStatsProjection | undefined>('sessionStats') : undefined
   const stats = useMemo(() => projectedStats ?? deriveStats(legacyNodes ?? []), [projectedStats, legacyNodes])
-  const groups = buildStatsGroups(stats, usage, snapshot.value ?? DEFAULT_SETTINGS, t)
-  const line = groups.join(' | ')
+  const value = snapshot.value ?? DEFAULT_SETTINGS
+  // A non-empty template fully customizes the row; empty = default segments.
+  const template = value.template.trim()
+  const rendered = useMemo(
+    () => (template !== '' ? renderTemplate(template, stats, usage) : ''),
+    [template, stats, usage],
+  )
+  // Like the official row, show nothing before any step or token exists.
+  const hasData = (stats?.steps ?? 0) > 0
+    || (usage !== undefined
+      && (usage.uncachedInputTokens + usage.cacheReadTokens + usage.cacheWriteTokens > 0 || usage.outputTokens > 0))
+  const groups = !value.enabled || !hasData
+    ? []
+    : template !== ''
+      ? (rendered.trim() !== '' ? [rendered.trim()] : [])
+      : buildStatsGroups(stats, usage, ALL_SEGMENTS, t)
+  const line = template !== '' ? groups[0] ?? '' : groups.join(' | ')
   const rootRef = useRef<HTMLDivElement>(null)
   const [truncated, setTruncated] = useState(false)
 

@@ -4,8 +4,33 @@
  * behavior is unchanged when segments are toggled on.
  */
 import type { ConversationNode, SessionStatsProjection, TokenUsageProjection } from './types.js'
-import type { StatusbarSettings } from '../settings.js'
 import type { StatsTranslate } from './locales.js'
+
+/** Segment selection used only by the default (empty-template) rendering. */
+export interface SegmentToggles {
+  turns: boolean
+  steps: boolean
+  llmTime: boolean
+  toolTime: boolean
+  ttft: boolean
+  throughput: boolean
+  cacheHit: boolean
+  inputTokens: boolean
+  outputTokens: boolean
+}
+
+/** Default rendering: every shipped segment on, like the official stats row. */
+export const ALL_SEGMENTS: Readonly<SegmentToggles> = Object.freeze({
+  turns: true,
+  steps: true,
+  llmTime: true,
+  toolTime: true,
+  ttft: true,
+  throughput: true,
+  cacheHit: true,
+  inputTokens: true,
+  outputTokens: true,
+})
 
 export function formatTokens(value: number): string {
   const scaled = (item: number) => item >= 100 ? String(Math.round(item)) : String(Math.round(item * 10) / 10)
@@ -24,6 +49,13 @@ export function formatDuration(ms: number): string {
 export function formatTokensPerSecond(value: number): string {
   const clamped = Math.max(0, value)
   return clamped >= 10 ? String(Math.round(clamped)) : String(Math.round(clamped * 10) / 10)
+}
+
+/** Bare seconds number for template placeholders: "5.8" under a minute, "102" above. */
+export function formatSecondsNumber(ms: number): string {
+  const seconds = ms / 1_000
+  if (seconds < 60) return String(Math.round(seconds * 10) / 10)
+  return String(Math.round(seconds))
 }
 
 export function billedInputTokens(usage: TokenUsageProjection): number {
@@ -117,45 +149,93 @@ export function deriveStats(nodes: readonly ConversationNode[]): SessionStatsPro
   return { turns: turns.size, steps, llmMs, toolMs, ttftMs, ttftSteps, decodeMs, decodeTokens }
 }
 
-/** Compose the display groups from the toggles; empty when the row is hidden. */
+/** Compose the default display groups (empty template); mirrors the official row. */
 export function buildStatsGroups(
   stats: SessionStatsProjection | undefined,
   usage: TokenUsageProjection | undefined,
-  settings: StatusbarSettings,
+  segments: Readonly<SegmentToggles>,
   t: StatsTranslate,
 ): string[] {
-  if (!settings.enabled) return []
   const groups: string[] = []
 
   if (stats !== undefined && stats.steps > 0) {
-    if (settings.turns && settings.steps) groups.push(t('stats.counts', { turns: stats.turns, steps: stats.steps }))
-    else if (settings.turns) groups.push(t('stats.turns', { turns: stats.turns }))
-    else if (settings.steps) groups.push(t('stats.steps', { steps: stats.steps }))
+    if (segments.turns && segments.steps) groups.push(t('stats.counts', { turns: stats.turns, steps: stats.steps }))
+    else if (segments.turns) groups.push(t('stats.turns', { turns: stats.turns }))
+    else if (segments.steps) groups.push(t('stats.steps', { steps: stats.steps }))
 
     const durations: string[] = []
-    if (settings.llmTime && stats.llmMs > 0) durations.push(t('stats.llm', { duration: formatDuration(stats.llmMs) }))
-    if (settings.toolTime && stats.toolMs > 0) durations.push(t('stats.toolCall', { duration: formatDuration(stats.toolMs) }))
+    if (segments.llmTime && stats.llmMs > 0) durations.push(t('stats.llm', { duration: formatDuration(stats.llmMs) }))
+    if (segments.toolTime && stats.toolMs > 0) durations.push(t('stats.toolCall', { duration: formatDuration(stats.toolMs) }))
     if (durations.length > 0) groups.push(durations.join(' · '))
 
     const speeds: string[] = []
-    if (settings.ttft && stats.ttftSteps > 0) speeds.push(t('stats.ttftAverage', { duration: formatDuration(stats.ttftMs / stats.ttftSteps) }))
-    if (settings.throughput && stats.decodeMs > 0) {
+    if (segments.ttft && stats.ttftSteps > 0) speeds.push(t('stats.ttftAverage', { duration: formatDuration(stats.ttftMs / stats.ttftSteps) }))
+    if (segments.throughput && stats.decodeMs > 0) {
       speeds.push(t('stats.tokensPerSecond', { throughput: formatTokensPerSecond(stats.decodeTokens / (stats.decodeMs / 1_000)) }))
     }
     if (speeds.length > 0) groups.push(speeds.join(' · '))
   }
 
   if (usage !== undefined && (billedInputTokens(usage) > 0 || usage.outputTokens > 0)) {
-    if (settings.cacheHit) {
+    if (segments.cacheHit) {
       const cacheHit = cacheHitPercent(usage)
       if (cacheHit !== null) groups.push(t('stats.cacheHit', { percent: cacheHit }))
     }
     const input = formatTokens(billedInputTokens(usage))
     const output = formatTokens(usage.outputTokens)
-    if (settings.inputTokens && settings.outputTokens) groups.push(t('stats.tokens', { input, output }))
-    else if (settings.inputTokens) groups.push(t('stats.inputTokens', { input }))
-    else if (settings.outputTokens) groups.push(t('stats.outputTokens', { output }))
+    if (segments.inputTokens && segments.outputTokens) groups.push(t('stats.tokens', { input, output }))
+    else if (segments.inputTokens) groups.push(t('stats.inputTokens', { input }))
+    else if (segments.outputTokens) groups.push(t('stats.outputTokens', { output }))
   }
 
   return groups
+}
+
+/** Long setting-key spellings accepted inside templates, mapped to short vars. */
+const TEMPLATE_ALIASES: Readonly<Record<string, string>> = {
+  llmTime: 'llm',
+  toolTime: 'tool',
+  throughput: 'tps',
+  cacheHit: 'cache',
+  inputTokens: 'input',
+  outputTokens: 'output',
+}
+
+/**
+ * Render the user's display template (JS template-literal syntax `${var}`):
+ * every `${variable}` placeholder is substituted with the current value;
+ * unknown placeholders stay verbatim so typos are visible; unavailable values
+ * (e.g. cache hit before any billed input) become empty strings.
+ *
+ * Variables: `${turns}` `${steps}` `${llm}` `${tool}` `${ttft}` `${tps}`
+ * `${cache}` `${input}` `${output}` (long aliases `${llmTime}` `${toolTime}`
+ * `${throughput}` `${cacheHit}` `${inputTokens}` `${outputTokens}` also work).
+ * Units live in the template: `${llm}`/`${tool}` carry their own compact unit
+ * ("3m12s"), `${ttft}` and `${tps}` are bare numbers ("5.8", "69"),
+ * `${cache}` is the percent integer ("93" — may carry decimals near 100),
+ * `${input}`/`${output}` are compact token counts ("63.7M").
+ */
+export function renderTemplate(
+  template: string,
+  stats: SessionStatsProjection | undefined,
+  usage: TokenUsageProjection | undefined,
+): string {
+  const values: Record<string, string> = {}
+  if (stats !== undefined) {
+    values.turns = String(stats.turns)
+    values.steps = String(stats.steps)
+    values.llm = stats.llmMs > 0 ? formatDuration(stats.llmMs) : ''
+    values.tool = stats.toolMs > 0 ? formatDuration(stats.toolMs) : ''
+    values.ttft = stats.ttftSteps > 0 ? formatSecondsNumber(stats.ttftMs / stats.ttftSteps) : ''
+    values.tps = stats.decodeMs > 0 ? formatTokensPerSecond(stats.decodeTokens / (stats.decodeMs / 1_000)) : ''
+  }
+  if (usage !== undefined) {
+    values.cache = cacheHitPercent(usage) ?? ''
+    values.input = formatTokens(billedInputTokens(usage))
+    values.output = formatTokens(usage.outputTokens)
+  }
+  return template.replace(/\$\{([a-zA-Z]+)\}/g, (whole, name: string) => {
+    const key = TEMPLATE_ALIASES[name] ?? name
+    return key in values ? values[key] : whole
+  })
 }

@@ -1,51 +1,17 @@
-import { useState, useSyncExternalStore } from 'react'
+import { useRef, useState, useSyncExternalStore } from 'react'
 import type { SettingsScopeLike } from './runtime.js'
-import { DEFAULT_SETTINGS, SETTING_KEYS, type SettingKey, type StatusbarSettings } from '../settings.js'
-import type { Translate, TranslationKey } from './locales.js'
+import { DEFAULT_SETTINGS, type StatusbarSettings } from '../settings.js'
+import type { Translate } from './locales.js'
 
 export interface SettingsCardProps {
   settings: SettingsScopeLike<StatusbarSettings>
   t: Translate
 }
 
-const SEGMENTS: ReadonlyArray<{ key: Exclude<SettingKey, 'enabled'>; labelKey: TranslationKey; hintKey: TranslationKey }> = [
-  { key: 'turns', labelKey: 'card.turns', hintKey: 'card.turnsHint' },
-  { key: 'steps', labelKey: 'card.steps', hintKey: 'card.stepsHint' },
-  { key: 'llmTime', labelKey: 'card.llmTime', hintKey: 'card.llmTimeHint' },
-  { key: 'toolTime', labelKey: 'card.toolTime', hintKey: 'card.toolTimeHint' },
-  { key: 'ttft', labelKey: 'card.ttft', hintKey: 'card.ttftHint' },
-  { key: 'throughput', labelKey: 'card.throughput', hintKey: 'card.throughputHint' },
-  { key: 'cacheHit', labelKey: 'card.cacheHit', hintKey: 'card.cacheHitHint' },
-  { key: 'inputTokens', labelKey: 'card.inputTokens', hintKey: 'card.inputTokensHint' },
-  { key: 'outputTokens', labelKey: 'card.outputTokens', hintKey: 'card.outputTokensHint' },
-]
+/** Clickable variable chips, most-useful first. */
+const VARIABLES = ['ttft', 'tps', 'cache', 'input', 'output', 'turns', 'steps', 'llm', 'tool'] as const
 
 type Notice = { kind: 'success' | 'error'; text: string } | undefined
-
-function ToggleRow({
-  checked,
-  description,
-  disabled,
-  label,
-  onChange,
-}: {
-  checked: boolean
-  description: string
-  disabled: boolean
-  label: string
-  onChange(value: boolean): void
-}) {
-  return <label className="dsc-row" data-disabled={disabled || undefined}>
-    <span className="dsc-copy">
-      <span className="dsc-label">{label}</span>
-      <span className="dsc-hint">{description}</span>
-    </span>
-    <span className="dsc-toggle">
-      <input type="checkbox" checked={checked} disabled={disabled} onChange={event => onChange(event.currentTarget.checked)} />
-      <span className="dsc-switch" aria-hidden="true" />
-    </span>
-  </label>
-}
 
 export function StatusbarSettingsCard({ settings, t }: SettingsCardProps) {
   const snapshot = useSyncExternalStore(
@@ -54,12 +20,16 @@ export function StatusbarSettingsCard({ settings, t }: SettingsCardProps) {
     () => settings.getSnapshot(),
   )
   const [open, setOpen] = useState(false)
-  const [busy, setBusy] = useState<SettingKey | 'reset'>()
+  const [busy, setBusy] = useState<'enabled' | 'template' | 'reset'>()
   const [notice, setNotice] = useState<Notice>()
-  const value = snapshot.value ?? DEFAULT_SETTINGS
+  /** Local draft while editing; null = show the stored value. */
+  const [draft, setDraft] = useState<string | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const stored = snapshot.value ?? DEFAULT_SETTINGS
+  const shown = draft ?? stored.template
   const writable = snapshot.status === 'ready' && snapshot.writable
 
-  const update = async (key: SettingKey, next: boolean) => {
+  const update = async (key: 'enabled' | 'template', next: boolean | string) => {
     setBusy(key)
     setNotice(undefined)
     try {
@@ -72,11 +42,35 @@ export function StatusbarSettingsCard({ settings, t }: SettingsCardProps) {
     }
   }
 
+  const commitTemplate = async () => {
+    if (draft === null) return
+    const value = draft
+    setDraft(null)
+    if (value === stored.template) return
+    await update('template', value)
+  }
+
+  const insertVariable = (name: string) => {
+    const token = '${' + name + '}'
+    const input = inputRef.current
+    const base = draft ?? stored.template
+    if (input === null) { setDraft(base + token); return }
+    const start = input.selectionStart ?? base.length
+    const end = input.selectionEnd ?? base.length
+    setDraft(base.slice(0, start) + token + base.slice(end))
+    requestAnimationFrame(() => {
+      input.focus()
+      const caret = start + token.length
+      input.setSelectionRange(caret, caret)
+    })
+  }
+
   const reset = async () => {
     setBusy('reset')
     setNotice(undefined)
+    setDraft(null)
     try {
-      for (const key of SETTING_KEYS) await settings.unset(key)
+      for (const key of ['enabled', 'template'] as const) await settings.unset(key)
       setNotice({ kind: 'success', text: t('card.resetDone') })
     } catch (cause) {
       setNotice({ kind: 'error', text: cause instanceof Error ? cause.message : String(cause) })
@@ -108,21 +102,47 @@ export function StatusbarSettingsCard({ settings, t }: SettingsCardProps) {
       </svg>
     </button>
     {open && <div className="dsc-card-body">
-      <ToggleRow
-        checked={value.enabled}
-        disabled={!writable || busy !== undefined}
-        label={t('card.enabled')}
-        description={t('card.enabledHint')}
-        onChange={next => { void update('enabled', next) }}
-      />
-      {SEGMENTS.map(option => <ToggleRow
-        key={option.key}
-        checked={value[option.key]}
-        disabled={!writable || busy !== undefined}
-        label={t(option.labelKey)}
-        description={t(option.hintKey)}
-        onChange={next => { void update(option.key, next) }}
-      />)}
+      <div className="dsc-row">
+        <label className="dsc-copy">
+          <span className="dsc-label">{t('card.enabled')}</span>
+          <span className="dsc-hint">{t('card.enabledHint')}</span>
+        </label>
+        <span className="dsc-toggle">
+          <input
+            type="checkbox"
+            checked={stored.enabled}
+            disabled={!writable || busy !== undefined}
+            onChange={event => { void update('enabled', event.currentTarget.checked) }}
+          />
+          <span className="dsc-switch" aria-hidden="true" />
+        </span>
+      </div>
+      <div className="dsc-row dsc-template-row">
+        <div className="dsc-copy">
+          <input
+            ref={inputRef}
+            type="text"
+            className="dsc-input"
+            value={shown}
+            placeholder={t('card.templateExample')}
+            spellCheck={false}
+            disabled={!writable || busy !== undefined}
+            onChange={event => setDraft(event.currentTarget.value)}
+            onBlur={() => { void commitTemplate() }}
+            onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.blur() }}
+          />
+          <div className="dsc-chips" role="group" aria-label={t('card.chipsLabel')}>
+            {VARIABLES.map(name => <button
+              key={name}
+              type="button"
+              className="dsc-chip"
+              disabled={!writable || busy !== undefined}
+              onClick={() => insertVariable(name)}
+            >{` \${${name}}`}</button>)}
+          </div>
+          <span className="dsc-hint">{t('card.templateSave')}</span>
+        </div>
+      </div>
       <div className="dsc-footer">
         <span className="dsc-footer-copy">
           <span

@@ -2,27 +2,30 @@
 
 **English** | [中文](./README.md)
 
-A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web UI plugin that makes the conversation statistics row below the composer **configurable** — every segment can be toggled on/off independently, live.
+A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web UI plugin that makes the conversation statistics row below the composer **fully template-driven** — JS template-literal syntax `${variable}`, write whatever you want, applies live.
 
-It shadows the shipped `stats` entry in the `conversation.composer.dock` slot (lower priority wins the cell) and re-renders the same figures with the same formatting as the official StatsLine, filtered through your toggles.
+It shadows the shipped `stats` entry in the `conversation.composer.dock` slot (lower priority wins the cell) with the same data and precision as the official StatsLine; the display content is entirely your template.
 
-## Segments
+## Template variables
 
-| Setting | Default | Display |
+| Variable | Meaning | Example |
 |---|---|---|
-| `turns` / `steps` | on | `12 turns · 34 steps` |
-| `llmTime` | on | `LLM 3m12s` |
-| `toolTime` | on | `Tool call 1m8s` |
-| `ttft` | on | `TTFT avg 0.8s` |
-| `throughput` | on | `42 tok/s` |
-| `cacheHit` | on | `Cache hit 87%` |
-| `inputTokens` / `outputTokens` | on | `Input 12.3K tok · Output 4.5K tok` |
-| `enabled` | on | Hide the whole row without losing your choices |
+| `${ttft}` | average time to first token, seconds (bare number) | `5.8` |
+| `${tps}` | decode throughput, tok/s (bare number) | `69` |
+| `${cache}` | cache hit percent (no `%` sign) | `93` |
+| `${input}` | billed input tokens (compact) | `63.7M` |
+| `${output}` | output tokens (compact) | `178K` |
+| `${turns}` / `${steps}` | turns / steps | `12` / `34` |
+| `${llm}` / `${tool}` | cumulative LLM / tool time (unit included) | `3m12s` |
+
+Long aliases also work: `${llmTime}` `${toolTime}` `${throughput}` `${cacheHit}` `${inputTokens}` `${outputTokens}`.
+
+Units, separators, and any literal text are yours to write in the template; unknown variables stay verbatim; variables without data yet render empty.
 
 ## Install
 
 ```bash
-dsh plugin --profile web add github:<you>/dsh-statusbar-config
+dsh plugin --profile web add github:MannixHu/dsh-statusbar-config
 ```
 
 Then restart `dsh web` (the loader graph is frozen at process start).
@@ -31,35 +34,27 @@ Then restart `dsh web` (the loader graph is frozen at process start).
 
 Two equivalent ways:
 
-- **In the UI** — Settings → Plugins → *Conversation statistics* card (changes apply immediately).
+- **In the UI** — Settings → Plugins → *Status bar template* card: click a variable chip to insert at the cursor, Enter to save, applies immediately (recommended).
 - **In `~/.dsh/settings.yaml`** — the `status-bar-config` namespace:
 
 ```yaml
 status-bar-config:
   enabled: true
-  turns: false
-  steps: false
-  llmTime: false
-  toolTime: false
-  ttft: true
-  throughput: true
-  cacheHit: true
-  inputTokens: true
-  outputTokens: true
+  template: 'TTFT avg ${ttft}s · ${tps} tok/s | Cache ${cache}% | In ${input} tok · Out ${output} tok'
 ```
 
-which renders exactly:
+renders:
 
 ```
-TTFT avg 0.9s · 42 tok/s | Cache hit 87% | Input 12.3K tok · Output 4.5K tok
+TTFT avg 5.8s · 69 tok/s | Cache 93% | In 63.7M tok · Out 178K tok
 ```
 
-The namespace is field-compatible with the rc-era `dsh-status-bar-config` plugin, so existing settings sections keep working.
+Empty `template` = default statistics row (the full shipped segments); `enabled: false` hides the row. The 0.1 per-segment toggles are superseded by the template — legacy yaml boolean keys are ignored; switch to `template` after upgrading.
 
 ## Compatibility
 
-- Requires DSH `0.1.2-alpha`+ (the plugin declares only client-graph packages that exist in the alpha reorganization: `dsh-client-locale`, `dsh-client-ui-renderer`, `dsh-client-ui-settings`, `dsh-client-ui-conversation`).
-- The built client bundle is committed (`lib/`), so installing from git needs no build step and no `onlyBuiltDependencies` entry.
+- Requires DSH `0.1.2-alpha`+ (client graph deps are only packages alive in the alpha reorganization: `dsh-client-locale`, `dsh-client-ui-renderer`, `dsh-client-ui-settings`, `dsh-client-ui-conversation`).
+- The built bundle (`lib/`) is committed, so installing from git needs no build step and no `onlyBuiltDependencies` entry.
 
 ## Build from source
 

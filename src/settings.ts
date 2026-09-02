@@ -2,60 +2,43 @@
  * Shared settings contract between the Host half (namespace registration)
  * and the browser half (scope binding + card).
  *
- * The namespace deliberately reuses the historical `status-bar-config` value:
- * users migrating from leonardoxr/dsh-status-bar-config keep their existing
- * `~/.dsh/settings.yaml` section untouched.
+ * The namespace deliberately reuses the historical `status-bar-config` value
+ * so pre-template sections in `~/.dsh/settings.yaml` keep loading (unknown
+ * legacy keys are ignored).
  */
 export const SETTINGS_NAMESPACE_VALUE = 'status-bar-config'
 
 export interface StatusbarSettings {
   enabled: boolean
-  turns: boolean
-  steps: boolean
-  llmTime: boolean
-  toolTime: boolean
-  ttft: boolean
-  throughput: boolean
-  cacheHit: boolean
-  inputTokens: boolean
-  outputTokens: boolean
+  /** Display template using `${variable}` placeholders; empty = default row. */
+  template: string
 }
 
 export const SETTING_KEYS = [
   'enabled',
-  'turns',
-  'steps',
-  'llmTime',
-  'toolTime',
-  'ttft',
-  'throughput',
-  'cacheHit',
-  'inputTokens',
-  'outputTokens',
+  'template',
 ] as const satisfies readonly (keyof StatusbarSettings)[]
 
 export type SettingKey = (typeof SETTING_KEYS)[number]
 
 export const DEFAULT_SETTINGS: Readonly<StatusbarSettings> = Object.freeze({
   enabled: true,
-  turns: true,
-  steps: true,
-  llmTime: true,
-  toolTime: true,
-  ttft: true,
-  throughput: true,
-  cacheHit: true,
-  inputTokens: true,
-  outputTokens: true,
+  template: '',
 })
 
 /**
  * Narrow one wire section to the exact settings shape; undefined rejects the
- * section so the consumer falls back to defaults.
+ * section so the consumer falls back to defaults. Unknown keys (legacy toggle
+ * names from pre-template versions) are ignored; a missing `template`
+ * resolves to its default.
  */
 export function decodeSettings(value: unknown): StatusbarSettings | undefined {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined
   const record = value as Record<string, unknown>
-  for (const key of SETTING_KEYS) if (typeof record[key] !== 'boolean') return undefined
-  return Object.fromEntries(SETTING_KEYS.map(key => [key, record[key]])) as unknown as StatusbarSettings
+  if (typeof record.enabled !== 'boolean') return undefined
+  if (record.template !== undefined && typeof record.template !== 'string') return undefined
+  return {
+    enabled: record.enabled,
+    template: typeof record.template === 'string' ? record.template : DEFAULT_SETTINGS.template,
+  }
 }
