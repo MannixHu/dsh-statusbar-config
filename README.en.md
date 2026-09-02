@@ -4,6 +4,8 @@
 
 A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) web UI plugin that makes the conversation statistics row below the composer **fully template-driven** — JS template-literal syntax `${variable}`, write whatever you want, applies live.
 
+<p align="center"><img src="./assets/stats-bar.png" alt="Rendered stats bar: only the segments your template names" width="560"></p>
+
 It shadows the shipped `stats` entry in the `conversation.composer.dock` slot (lower priority wins the cell) with the same data and precision as the official StatsLine; the display content is entirely your template.
 
 ## Template variables

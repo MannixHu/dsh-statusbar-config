@@ -72,5 +72,12 @@
     "rimraf": "^6.0.1",
     "tsdown": "^0.22.14",
     "typescript": "^5.9.3"
-  }
+  },
+  "homepage": "https://github.com/MannixHu/dsh-statusbar-config#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MannixHu/dsh-statusbar-config.git"
+  },
+  "bugs": "https://github.com/MannixHu/dsh-statusbar-config/issues",
+  "author": "MannixHu"
 }
