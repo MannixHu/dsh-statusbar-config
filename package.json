@@ -1,6 +1,6 @@
 {
   "name": "dsh-statusbar-config",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Template-driven conversation statistics row for DeepSeek Harness (${variable} placeholders, shadows the shipped stats line)",
   "type": "module",
   "main": "lib/index.js",

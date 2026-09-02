@@ -136,6 +136,8 @@ export function StatusbarSettingsCard({ settings, t }: SettingsCardProps) {
               key={name}
               type="button"
               className="dsc-chip"
+              data-tip={t(`var.${name}`)}
+              aria-label={`\${${name}} — ${t(`var.${name}`)}`}
               disabled={!writable || busy !== undefined}
               onClick={() => insertVariable(name)}
             >{` \${${name}}`}</button>)}

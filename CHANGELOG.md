@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 (2026-09-02)
+
+- Variable chips show a bilingual hover tooltip describing each `${variable}`
+  (what it measures, format, example value); also exposed via `aria-label`
+
 ## 0.2.0 (2026-09-02)
 
 Template-driven status bar. The 0.1 per-segment toggles are superseded by a
