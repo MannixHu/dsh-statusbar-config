@@ -37,7 +37,8 @@
     "clean": "rimraf lib",
     "typecheck": "tsc --noEmit",
     "build": "pnpm clean && tsdown",
-    "check": "pnpm typecheck && pnpm build"
+    "check": "pnpm typecheck && pnpm build && pnpm test",
+    "test": "vitest run"
   },
   "keywords": [
     "deepseek-harness",
