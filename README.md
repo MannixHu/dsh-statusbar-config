@@ -4,6 +4,9 @@
 
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) Web UI 插件：用**模板完全自定义**输入框下方的会话统计行——JS 模板字符串语法 `${变量}`，想要什么写什么，即时生效。
 
+[![stars](https://img.shields.io/github/stars/MannixHu/dsh-statusbar-config?style=flat)](https://github.com/MannixHu/dsh-statusbar-config)
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+
 <p align="center"><img src="./assets/stats-bar.png" alt="状态栏模板渲染效果：只显示模板里写的段落" width="560"></p>
 
 实现方式：以更低优先级影子化 `conversation.composer.dock` 槽位中官方的 `stats` 条目，数据与官方 StatsLine 同源同精度，显示内容完全由你的模板决定。
