@@ -51,6 +51,18 @@ TTFT avg 5.8s · 69 tok/s | Cache 93% | In 63.7M tok · Out 178K tok
 
 Empty `template` = default statistics row (the full shipped segments); `enabled: false` hides the row. The 0.1 per-segment toggles are superseded by the template — legacy yaml boolean keys are ignored; switch to `template` after upgrading.
 
+## Migration
+
+**From the 0.1 segment toggles**: 0.2 replaces them with the template. Legacy boolean keys in yaml are ignored — rewrite your toggle combination as one `template:` line; for example, with only ttft/throughput/cacheHit/input/output on:
+
+```yaml
+status-bar-config:
+  enabled: true
+  template: 'TTFT avg ${ttft}s · ${tps} tok/s | Cache ${cache}% | In ${input} tok · Out ${output} tok'
+```
+
+**From leonardoxr/dsh-status-bar-config**: this plugin keeps the same `status-bar-config` namespace, so your existing settings section loads as-is. That plugin's inject list depends on `@deepseek-ai/dsh-client-runtime` / `dsh-client-ui-slots`, which the 0.1.2-alpha reorganization removed; this plugin is rewritten against the post-alpha package graph and needs no inject patch.
+
 ## Compatibility
 
 - Requires DSH `0.1.2-alpha`+ (client graph deps are only packages alive in the alpha reorganization: `dsh-client-locale`, `dsh-client-ui-renderer`, `dsh-client-ui-settings`, `dsh-client-ui-conversation`).

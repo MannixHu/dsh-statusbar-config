@@ -51,6 +51,18 @@ status-bar-config:
 
 `template` 留空 = 默认统计行（与官方相同的全量段落）；`enabled: false` = 整行隐藏。0.1 版的段落开关已被模板取代，旧的 yaml 布尔键会被忽略，升级后改用 `template` 即可。
 
+## 迁移
+
+**从 0.1 的段落开关升级**：0.2 起开关由模板取代。旧的 yaml 布尔键会被忽略，把原来的开关组合改写成一条 `template:` 即可，例如原来只开 ttft/throughput/cacheHit/input/output 时：
+
+```yaml
+status-bar-config:
+  enabled: true
+  template: '首 token 平均 ${ttft}s · ${tps} tok/s | 缓存命中 ${cache}% | 输入 ${input} tok · 输出 ${output} tok'
+```
+
+**从 leonardoxr/dsh-status-bar-config 迁移**：本插件沿用同一命名空间 `status-bar-config`，settings.yaml 里的段落直接可读；但该插件依赖的 `@deepseek-ai/dsh-client-runtime` / `dsh-client-ui-slots` 已在 0.1.2-alpha 重组中移除，本插件按 alpha 后的包图重写，无需再打 inject 补丁。
+
 ## 兼容性
 
 - 需要 DSH `0.1.2-alpha`+（客户端图依赖只声明了 alpha 重组后仍存在的包：`dsh-client-locale`、`dsh-client-ui-renderer`、`dsh-client-ui-settings`、`dsh-client-ui-conversation`）。
