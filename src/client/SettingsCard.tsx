@@ -50,6 +50,21 @@ export function StatusbarSettingsCard({ settings, t }: SettingsCardProps) {
     await update('template', value)
   }
 
+  /** Clamp the tooltip inside the card so it never clips at either dialog edge. */
+  const positionTip = (event: React.SyntheticEvent<HTMLButtonElement>) => {
+    const chip = event.currentTarget
+    const anchor = chip.closest('.dsc-card')
+    if (anchor === null) return
+    const tipWidth = parseFloat(getComputedStyle(chip, '::after').width)
+    if (!Number.isFinite(tipWidth) || tipWidth <= 0) return
+    const chipRect = chip.getBoundingClientRect()
+    const anchorRect = anchor.getBoundingClientRect()
+    const lower = anchorRect.left - chipRect.left
+    const upper = anchorRect.right - chipRect.left - tipWidth - 8
+    const left = Math.max(lower, Math.min(0, upper))
+    chip.style.setProperty('--tip-left', `${Math.round(left)}px`)
+  }
+
   const insertVariable = (name: string) => {
     const token = '${' + name + '}'
     const input = inputRef.current
@@ -138,6 +153,8 @@ export function StatusbarSettingsCard({ settings, t }: SettingsCardProps) {
               className="dsc-chip"
               data-tip={t(`var.${name}`)}
               aria-label={`\${${name}} — ${t(`var.${name}`)}`}
+              onMouseEnter={positionTip}
+              onFocus={positionTip}
               disabled={!writable || busy !== undefined}
               onClick={() => insertVariable(name)}
             >{` \${${name}}`}</button>)}
