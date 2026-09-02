@@ -72,7 +72,7 @@ describe('deriveStats (window fallback)', () => {
     const out = deriveStats(nodes)
     expect(out).toEqual({
       turns: 2, steps: 2, llmMs: 6_000, toolMs: 6_000,
-      ttftMs: 900, ttftSteps: 2, decodeMs: 5_500, decodeTokens: 100,
+      ttftMs: 900, ttftSteps: 2, decodeMs: 5_100, decodeTokens: 100,
     })
   })
 })
