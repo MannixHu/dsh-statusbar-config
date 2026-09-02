@@ -1,0 +1,66 @@
+{
+  "name": "dsh-statusbar-config",
+  "version": "0.1.0",
+  "description": "Configurable conversation statistics row for DeepSeek Harness (shadows the shipped stats line with per-segment toggles)",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/index.js.map",
+    "lib/client.js",
+    "lib/client.js.map",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "scripts": {
+    "clean": "rimraf lib",
+    "typecheck": "tsc --noEmit",
+    "build": "pnpm clean && tsdown",
+    "check": "pnpm typecheck && pnpm build"
+  },
+  "keywords": ["deepseek-harness", "dsh", "status-bar", "stats", "plugin"],
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-settings": "^0.1.2-alpha.4",
+    "@deepseek-ai/schemastery": "^3.18.2",
+    "react": "^18.3.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": { "optional": true },
+    "@deepseek-ai/dsh-settings": { "optional": true },
+    "@deepseek-ai/schemastery": { "optional": true },
+    "react": { "optional": true }
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-settings": "^0.1.2-alpha.4",
+    "@deepseek-ai/schemastery": "^3.18.2",
+    "@types/node": "^22.15.0",
+    "@types/react": "~18.3.1",
+    "react": "^18.3.1",
+    "rimraf": "^6.0.1",
+    "tsdown": "^0.22.14",
+    "typescript": "^5.9.3"
+  }
+}
