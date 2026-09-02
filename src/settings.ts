@@ -14,13 +14,6 @@ export interface StatusbarSettings {
   template: string
 }
 
-export const SETTING_KEYS = [
-  'enabled',
-  'template',
-] as const satisfies readonly (keyof StatusbarSettings)[]
-
-export type SettingKey = (typeof SETTING_KEYS)[number]
-
 export const DEFAULT_SETTINGS: Readonly<StatusbarSettings> = Object.freeze({
   enabled: true,
   template: '',

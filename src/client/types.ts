@@ -40,3 +40,6 @@ export interface ConversationNode {
   timing?: ConversationNodeTiming
   usage?: { outputTokens?: unknown }
 }
+
+/** `(snapshot) => value` selector over an external store hook. */
+export type SnapshotSelector<S> = <T>(select: (snapshot: S) => T) => T

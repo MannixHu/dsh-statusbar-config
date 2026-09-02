@@ -191,16 +191,6 @@ export function buildStatsGroups(
   return groups
 }
 
-/** Long setting-key spellings accepted inside templates, mapped to short vars. */
-const TEMPLATE_ALIASES: Readonly<Record<string, string>> = {
-  llmTime: 'llm',
-  toolTime: 'tool',
-  throughput: 'tps',
-  cacheHit: 'cache',
-  inputTokens: 'input',
-  outputTokens: 'output',
-}
-
 /**
  * Render the user's display template (JS template-literal syntax `${var}`):
  * every `${variable}` placeholder is substituted with the current value;
@@ -208,11 +198,9 @@ const TEMPLATE_ALIASES: Readonly<Record<string, string>> = {
  * (e.g. cache hit before any billed input) become empty strings.
  *
  * Variables: `${turns}` `${steps}` `${llm}` `${tool}` `${ttft}` `${tps}`
- * `${cache}` `${input}` `${output}` (long aliases `${llmTime}` `${toolTime}`
- * `${throughput}` `${cacheHit}` `${inputTokens}` `${outputTokens}` also work).
- * Units live in the template: `${llm}`/`${tool}` carry their own compact unit
- * ("3m12s"), `${ttft}` and `${tps}` are bare numbers ("5.8", "69"),
- * `${cache}` is the percent integer ("93" — may carry decimals near 100),
+ * `${cache}` `${input}` `${output}`. Units live in the template: `${llm}`/
+ * `${tool}` carry their own compact unit ("3m12s"), `${ttft}` and `${tps}`
+ * are bare numbers ("5.8", "69"), `${cache}` is the percent integer ("93"),
  * `${input}`/`${output}` are compact token counts ("63.7M").
  */
 export function renderTemplate(
@@ -235,7 +223,6 @@ export function renderTemplate(
     values.output = formatTokens(usage.outputTokens)
   }
   return template.replace(/\$\{([a-zA-Z]+)\}/g, (whole, name: string) => {
-    const key = TEMPLATE_ALIASES[name] ?? name
-    return key in values ? values[key] : whole
+    return name in values ? values[name] : whole
   })
 }

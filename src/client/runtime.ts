@@ -34,8 +34,8 @@ export interface SlotRegistration {
 export type SlotComponent = ComponentType<any>
 
 export interface SlotsLike {
-  inject(name: string, register: () => { dispose?: () => void } | void): void
-  register(options: SlotRegistration, component: SlotComponent): { dispose?: () => void }
+  inject(name: string, register: () => unknown): void
+  register(options: SlotRegistration, component: SlotComponent): unknown
 }
 
 export interface ClientContextLike {

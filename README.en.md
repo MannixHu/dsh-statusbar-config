@@ -18,8 +18,6 @@ It shadows the shipped `stats` entry in the `conversation.composer.dock` slot (l
 | `${turns}` / `${steps}` | turns / steps | `12` / `34` |
 | `${llm}` / `${tool}` | cumulative LLM / tool time (unit included) | `3m12s` |
 
-Long aliases also work: `${llmTime}` `${toolTime}` `${throughput}` `${cacheHit}` `${inputTokens}` `${outputTokens}`.
-
 Units, separators, and any literal text are yours to write in the template; unknown variables stay verbatim; variables without data yet render empty.
 
 ## Install

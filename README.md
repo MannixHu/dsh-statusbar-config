@@ -18,8 +18,6 @@
 | `${turns}` / `${steps}` | 轮数 / 步数 | `12` / `34` |
 | `${llm}` / `${tool}` | LLM / 工具调用累计时长（自带单位） | `3m12s` |
 
-长别名同样支持：`${llmTime}` `${toolTime}` `${throughput}` `${cacheHit}` `${inputTokens}` `${outputTokens}`。
-
 单位、分隔符、任何文字都由你写在模板里；未知变量原样显示；暂无数据的变量渲染为空。
 
 ## 安装

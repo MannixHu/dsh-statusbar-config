@@ -1,33 +1,27 @@
 import { Fragment, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { SettingsScopeLike } from './runtime.js'
-import type { SessionStatsProjection, TokenUsageProjection, ConversationNode } from './types.js'
-import type { SnapshotSelector } from './hooks.js'
+import type { SessionStatsProjection, TokenUsageProjection, ConversationNode, SnapshotSelector } from './types.js'
 import { DEFAULT_SETTINGS, type StatusbarSettings } from '../settings.js'
 import type { Translate } from './locales.js'
-import { buildStatsGroups, ALL_SEGMENTS, deriveStats, renderTemplate } from './stats.js'
+import { ALL_SEGMENTS, billedInputTokens, buildStatsGroups, deriveStats, renderTemplate } from './stats.js'
 
 export interface DockProps {
   settings: SettingsScopeLike<StatusbarSettings>
   t: Translate
-  /** alpha (0.1.2+) passes the chat-store selector hook. */
-  useChat?: SnapshotSelector<{ legacy: { nodes: readonly ConversationNode[] } }>
-  /** Legacy (rc-era) shells passed the session selector hook instead. */
-  useSession?: SnapshotSelector<{ chat: { legacy: { nodes: readonly ConversationNode[] } } }>
-  useProjection?: <T>(name: string) => T | undefined
+  useChat: SnapshotSelector<{ legacy: { nodes: readonly ConversationNode[] } }>
+  useProjection: <T>(name: string) => T | undefined
 }
 
-export function ConfigurableStatsLine({ settings, t, useChat, useSession, useProjection }: DockProps) {
+export function ConfigurableStatsLine({ settings, t, useChat, useProjection }: DockProps) {
   const snapshot = useSyncExternalStore(
     listener => settings.subscribe(listener),
     () => settings.getSnapshot(),
     () => settings.getSnapshot(),
   )
-  const legacyNodes = useChat
-    ? useChat(s => s.legacy.nodes)
-    : useSession ? useSession(s => s.chat.legacy.nodes) : []
-  const usage = useProjection ? useProjection<TokenUsageProjection | undefined>('tokenUsage') : undefined
-  const projectedStats = useProjection ? useProjection<SessionStatsProjection | undefined>('sessionStats') : undefined
-  const stats = useMemo(() => projectedStats ?? deriveStats(legacyNodes ?? []), [projectedStats, legacyNodes])
+  const settledNodes = useChat(s => s.legacy.nodes)
+  const usage = useProjection<TokenUsageProjection | undefined>('tokenUsage')
+  const projectedStats = useProjection<SessionStatsProjection | undefined>('sessionStats')
+  const stats = useMemo(() => projectedStats ?? deriveStats(settledNodes ?? []), [projectedStats, settledNodes])
   const value = snapshot.value ?? DEFAULT_SETTINGS
   // A non-empty template fully customizes the row; empty = default segments.
   const template = value.template.trim()
@@ -37,8 +31,7 @@ export function ConfigurableStatsLine({ settings, t, useChat, useSession, usePro
   )
   // Like the official row, show nothing before any step or token exists.
   const hasData = (stats?.steps ?? 0) > 0
-    || (usage !== undefined
-      && (usage.uncachedInputTokens + usage.cacheReadTokens + usage.cacheWriteTokens > 0 || usage.outputTokens > 0))
+    || (usage !== undefined && (billedInputTokens(usage) > 0 || usage.outputTokens > 0))
   const groups = !value.enabled || !hasData
     ? []
     : template !== ''
