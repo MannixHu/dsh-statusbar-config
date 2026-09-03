@@ -1,9 +1,13 @@
 # Changelog
 
-## 0.2.1 (2026-09-02)
+## 0.2.1 (2026-09-03)
 
 - Variable chips show a bilingual hover tooltip describing each `${variable}`
   (what it measures, format, example value); also exposed via `aria-label`
+- Tooltip opens below the chip, aligns to its left edge, and is clamped inside
+  the settings card so it never clips at either dialog edge
+- Release tarball is attached with a version-less filename
+  (`dsh-statusbar-config.tgz`) so `releases/latest/download/` links stay stable
 
 ## 0.2.0 (2026-09-02)
 
