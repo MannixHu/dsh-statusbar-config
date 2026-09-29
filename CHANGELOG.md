@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.2 (2026-09-29)
+
+- Adapt to DSH 0.1.7+: the client settings service moved from `settingsScope`
+  to `configForms`, so the plugin now reads and writes its config through
+  `configForms.get('dsh-statusbar-config')` (the Loader entry id). On 0.2
+  Desktop the old inject left the entry pending and failed the whole web boot
+- The settings card moves from the removed `settings.plugin.item` slot to this
+  bundle's page in the Plugins section (`plugins.bundle.config`)
+- Values now live in the `dsh-statusbar-config` entry config; the legacy
+  `status-bar-config` section in `settings.yaml` is no longer read
+
 ## 0.2.1 (2026-09-03)
 
 - Variable chips show a bilingual hover tooltip describing each `${variable}`

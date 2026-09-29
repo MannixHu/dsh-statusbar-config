@@ -68,7 +68,7 @@ status-bar-config:
 
 ## Compatibility
 
-- Requires DSH `0.1.2-alpha`+ (client graph deps are only packages alive in the alpha reorganization: `dsh-client-locale`, `dsh-client-ui-renderer`, `dsh-client-ui-settings`, `dsh-client-ui-conversation`).
+- Requires DSH `0.1.7`+ (client config goes through the `configForms` service; use 0.2.1 on older hosts).
 - The built bundle (`lib/`) is committed, so installing from git needs no build step and no `onlyBuiltDependencies` entry.
 
 ## Build from source

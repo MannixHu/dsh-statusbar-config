@@ -68,7 +68,7 @@ status-bar-config:
 
 ## 兼容性
 
-- 需要 DSH `0.1.2-alpha`+（客户端图依赖只声明了 alpha 重组后仍存在的包：`dsh-client-locale`、`dsh-client-ui-renderer`、`dsh-client-ui-settings`、`dsh-client-ui-conversation`）。
+- 需要 DSH `0.1.7`+（客户端配置走 `configForms` 服务；更早版本请用 0.2.1）。
 - 构建产物（`lib/`）随仓库提交，git 安装无需构建步骤，也不需要 `onlyBuiltDependencies` 白名单。
 
 ## 从源码构建

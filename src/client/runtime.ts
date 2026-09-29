@@ -15,8 +15,8 @@ export interface SettingsScopeSnapshotLike<T> {
 export interface SettingsScopeLike<T> {
   getSnapshot(): SettingsScopeSnapshotLike<T>
   subscribe(listener: () => void): () => void
-  set(field: string, value: unknown): Promise<void>
-  unset(field: string): Promise<void>
+  set(field: string, value: unknown): Promise<unknown>
+  unset(field: string): Promise<unknown>
 }
 
 export interface SlotRegistration {
@@ -43,8 +43,9 @@ export interface ClientContextLike {
   locale: {
     register(namespace: string, dictionaries: { zh: Record<string, string>; en: Record<string, string> }): () => void
   }
-  settingsScope: {
-    bind<T>(spec: { namespace: string; decode?: (section: unknown) => T | undefined }): SettingsScopeLike<T>
+  /** dsh 0.1.7+ client settings service (replaced `settingsScope`); forms are keyed by Loader entry id. */
+  configForms: {
+    get<T>(entryId: string): SettingsScopeLike<T>
   }
   slots: SlotsLike
 }

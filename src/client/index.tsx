@@ -1,10 +1,10 @@
 /**
  * Browser half: shadow the shipped `conversation.composer.dock` entry with
  * id `stats` (lower priority wins the cell) and contribute the settings card
- * dispatched by the Plugins tab under this plugin's namespace key.
+ * on this bundle's page in the Plugins section (`plugins.bundle.config`).
  */
 import type { ClientContextLike } from './runtime.js'
-import { SETTINGS_NAMESPACE_VALUE, decodeSettings, type StatusbarSettings } from '../settings.js'
+import type { StatusbarSettings } from '../settings.js'
 import { StatusbarSettingsCard } from './SettingsCard.js'
 import { LOCALE_NAMESPACE, en, zh } from './locales.js'
 import { ConfigurableStatsLine } from './StatsLine.js'
@@ -12,7 +12,7 @@ import { STYLE_ID, styles } from './styles.js'
 
 const PLUGIN_ID = 'dsh-statusbar-config'
 
-export const inject = ['slots', 'settingsScope', 'locale'] as const
+export const inject = ['slots', 'configForms', 'locale'] as const
 
 function installStyles(): () => void {
   document.querySelector(`style[data-plugin-css="${STYLE_ID}"]`)?.remove()
@@ -24,20 +24,23 @@ function installStyles(): () => void {
   return () => tag.remove()
 }
 
+function BundleConfigCard(props: Parameters<typeof StatusbarSettingsCard>[0] & { view?: string }) {
+  return props.view === 'summary' ? null : <StatusbarSettingsCard {...props} />
+}
+
 export function apply(ctx: ClientContextLike): void {
   ctx.effect(installStyles, 'dsh-statusbar-config: styles')
   ctx.effect(() => ctx.locale.register(LOCALE_NAMESPACE, { zh, en }), 'dsh-statusbar-config: locale')
-  const settings = ctx.settingsScope.bind<StatusbarSettings>({
-    namespace: SETTINGS_NAMESPACE_VALUE,
-    decode: decodeSettings,
-  })
+  // The Loader entry id from cordis.patch.yml; dsh 0.1.7+ keys config forms by it.
+  const settings = ctx.configForms.get<StatusbarSettings>(PLUGIN_ID)
 
-  ctx.slots.inject('settings.plugin.item', () => ctx.slots.register({
-    name: 'settings.plugin.item',
-    key: SETTINGS_NAMESPACE_VALUE,
+  // Keyed by the bundle's package name; `summary` is the one-line list view.
+  ctx.slots.inject('plugins.bundle.config', () => ctx.slots.register({
+    name: 'plugins.bundle.config',
+    key: PLUGIN_ID,
     locale: LOCALE_NAMESPACE,
     inject: () => ({ settings }) as Record<string, unknown>,
-  }, StatusbarSettingsCard))
+  }, BundleConfigCard))
 
   ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({
     name: 'conversation.composer.dock',
