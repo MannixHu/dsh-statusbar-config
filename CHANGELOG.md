@@ -10,6 +10,8 @@
   bundle's page in the Plugins section (`plugins.bundle.config`)
 - Values now live in the `dsh-statusbar-config` entry config; the legacy
   `status-bar-config` section in `settings.yaml` is no longer read
+- Declare `engines.dsh: >=0.1.7-0` so the plugin market can show and check the
+  host requirement
 
 ## 0.2.1 (2026-09-03)
 

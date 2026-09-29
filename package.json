@@ -49,7 +49,8 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=22"
+    "node": ">=22",
+    "dsh": ">=0.1.7-0"
   },
   "peerDependencies": {
     "@deepseek-ai/schemastery": "^3.18.2",
